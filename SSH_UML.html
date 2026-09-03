@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>SSH 무역 — UML Class Diagram</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --accent: #e8b400;
+  --accent2: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --purple: #bc8cff;
+  --orange: #ffa657;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --navy: #0a1628;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Header */
+.header {
+  padding: 32px 48px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--accent);
+  background: rgba(232,180,0,0.1);
+  border: 1px solid rgba(232,180,0,0.3);
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+.header h1 {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.header-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* Canvas */
+.canvas {
+  padding: 48px;
+  position: relative;
+  min-height: calc(100vh - 100px);
+}
+
+/* SVG arrows */
+.arrows-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Grid layout */
+.diagram-grid {
+  display: grid;
+  grid-template-columns: 280px 280px 280px 280px;
+  grid-template-rows: auto auto auto;
+  gap: 32px 48px;
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* UML Box */
+.uml-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.uml-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+}
+
+/* Class header */
+.class-header {
+  padding: 12px 16px;
+  border-bottom: 1.5px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.class-stereotype {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  opacity: 0.7;
+}
+.class-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Section */
+.section {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.section:last-child { border-bottom: none; }
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--muted);
+  padding: 0 16px 6px;
+  text-transform: uppercase;
+}
+.member {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 3px 16px;
+  line-height: 1.6;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.member-vis {
+  font-size: 12px;
+  width: 12px;
+  flex-shrink: 0;
+}
+.vis-pub { color: var(--green); }
+.vis-priv { color: var(--red); }
+.vis-prot { color: var(--orange); }
+
+.member-name { color: var(--text); }
+.member-type { color: var(--purple); font-size: 10px; }
+.member-param { color: var(--accent2); font-size: 10px; }
+.member-ret { color: var(--orange); font-size: 10px; }
+.member-dunder { color: var(--accent); }
+.member-static {
+  font-size: 8px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 0 4px;
+  border-radius: 3px;
+  letter-spacing: 1px;
+}
+
+/* Color themes per class */
+.theme-exception .class-header { background: rgba(248,81,73,0.12); border-bottom-color: rgba(248,81,73,0.4); }
+.theme-exception .class-name { color: var(--red); }
+.theme-exception .class-stereotype { color: rgba(248,81,73,0.6); }
+.theme-exception { border-color: rgba(248,81,73,0.3); }
+
+.theme-candidate .class-header { background: rgba(88,166,255,0.10); border-bottom-color: rgba(88,166,255,0.3); }
+.theme-candidate .class-name { color: var(--accent2); }
+.theme-candidate .class-stereotype { color: rgba(88,166,255,0.6); }
+.theme-candidate { border-color: rgba(88,166,255,0.3); }
+
+.theme-resume .class-header { background: rgba(232,180,0,0.10); border-bottom-color: rgba(232,180,0,0.35); }
+.theme-resume .class-name { color: var(--accent); }
+.theme-resume .class-stereotype { color: rgba(232,180,0,0.6); }
+.theme-resume { border-color: rgba(232,180,0,0.3); }
+
+.theme-result .class-header { background: rgba(63,185,80,0.10); border-bottom-color: rgba(63,185,80,0.3); }
+.theme-result .class-name { color: var(--green); }
+.theme-result .class-stereotype { color: rgba(63,185,80,0.6); }
+.theme-result { border-color: rgba(63,185,80,0.3); }
+
+.theme-biasrule .class-header { background: rgba(255,166,87,0.10); border-bottom-color: rgba(255,166,87,0.3); }
+.theme-biasrule .class-name { color: var(--orange); }
+.theme-biasrule .class-stereotype { color: rgba(255,166,87,0.6); }
+.theme-biasrule { border-color: rgba(255,166,87,0.3); }
+
+.theme-fair .class-header { background: rgba(63,185,80,0.08); border-bottom-color: rgba(63,185,80,0.25); }
+.theme-fair .class-name { color: #7ee787; }
+.theme-fair .class-stereotype { color: rgba(63,185,80,0.5); }
+.theme-fair { border-color: rgba(63,185,80,0.2); }
+
+.theme-biased .class-header { background: rgba(248,81,73,0.08); border-bottom-color: rgba(248,81,73,0.3); }
+.theme-biased .class-name { color: #ff7b72; }
+.theme-biased .class-stereotype { color: rgba(248,81,73,0.5); }
+.theme-biased { border-color: rgba(248,81,73,0.25); }
+
+/* Grid positions */
+.pos-exception { grid-column: 1; grid-row: 1; }
+.pos-candidate { grid-column: 2; grid-row: 1; }
+.pos-resume    { grid-column: 3; grid-row: 1; }
+.pos-result    { grid-column: 4; grid-row: 1; }
+.pos-biasrule  { grid-column: 1 / 2; grid-row: 2; }
+.pos-fair      { grid-column: 2 / 3; grid-row: 2; }
+.pos-biased    { grid-column: 3 / 4; grid-row: 2; }
+
+/* Legend */
+.legend {
+  margin: 32px 48px 48px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.legend-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+.legend-line {
+  width: 40px;
+  height: 2px;
+  flex-shrink: 0;
+}
+.leg-inherit { background: var(--accent); }
+.leg-compose { background: var(--accent2); border-top: 2px dashed var(--accent2); height: 0; }
+.leg-use     { background: var(--purple); border-top: 2px dashed var(--purple); height: 0; }
+.leg-raise   { background: var(--red); border-top: 2px dashed var(--red); height: 0; }
+
+/* Relationship labels on SVG */
+.rel-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  fill: var(--muted);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* Notes */
+.note-box {
+  background: rgba(232,180,0,0.06);
+  border: 1px dashed rgba(232,180,0,0.3);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  font-family: 'JetBrains Mono', monospace;
+  grid-column: 1 / 3;
+  grid-row: 3;
+}
+.note-box strong { color: var(--accent); }
+
+.note-box2 {
+  background: rgba(88,166,255,0.05);
+  border: 1px dashed rgba(88,166,255,0.25);
+  border-radius: 8px;
+  padding: 14px 18px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+  font-family: 'JetBrains Mono', monospace;
+  grid-column: 3 / 5;
+  grid-row: 3;
+}
+.note-box2 strong { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">UML</div>
+  <h1>SSH 무역 채용 시뮬레이터</h1>
+  <div class="header-sub">Class Diagram · OOP Architecture · Python + Streamlit</div>
+</div>
+
+<div class="canvas">
+
+  <!-- SVG Relationship Arrows -->
+  <svg class="arrows-svg" id="arrowSvg">
+    <defs>
+      <!-- Inheritance arrow (filled triangle) -->
+      <marker id="inherit-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#e8b400"/>
+      </marker>
+      <!-- Dependency arrow (open) -->
+      <marker id="dep-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polyline points="0 0, 8 3, 0 6" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
+      </marker>
+      <!-- Use arrow -->
+      <marker id="use-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polyline points="0 0, 8 3, 0 6" fill="none" stroke="#bc8cff" stroke-width="1.5"/>
+      </marker>
+      <!-- Raise arrow -->
+      <marker id="raise-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <polyline points="0 0, 8 3, 0 6" fill="none" stroke="#f85149" stroke-width="1.5"/>
+      </marker>
+      <!-- Compose arrow (diamond) -->
+      <marker id="compose-head" markerWidth="10" markerHeight="8" refX="1" refY="4" orient="auto">
+        <polygon points="0 4, 4 0, 10 4, 4 8" fill="#58a6ff"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <div class="diagram-grid" id="grid">
+
+    <!-- 1. ResumeValidationError -->
+    <div class="uml-box theme-exception pos-exception" id="box-exception">
+      <div class="class-header">
+        <div class="class-stereotype">«exception»</div>
+        <div class="class-name">ResumeValidationError</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Inherits</div>
+        <div class="member">
+          <span class="member-vis vis-pub">+</span>
+          <span class="member-name" style="color:var(--muted);">Exception</span>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-label">Methods</div>
+        <div class="member">
+          <span class="member-vis vis-pub">+</span>
+          <span class="member-dunder">pass</span>
+          <span class="member-type">(body)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Candidate -->
+    <div class="uml-box theme-candidate pos-candidate" id="box-candidate">
+      <div class="class-header">
+        <div class="class-stereotype">«entity»</div>
+        <div class="class-name">Candidate</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Attributes</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">name</span><span class="member-type">: str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">gender</span><span class="member-type">: str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">accent</span><span class="member-type">: str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">background</span><span class="member-type">: str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">school</span><span class="member-type">: str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">experience</span><span class="member-type">: str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">education</span><span class="member-type">: str</span></div>
+      </div>
+      <div class="section">
+        <div class="section-label">Methods</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__init__</span><span class="member-param">(name, gender, ...)</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__str__</span><span class="member-ret">→ str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__eq__</span><span class="member-param">(other)</span><span class="member-ret">→ bool</span></div>
+      </div>
+    </div>
+
+    <!-- 3. Resume -->
+    <div class="uml-box theme-resume pos-resume" id="box-resume">
+      <div class="class-header">
+        <div class="class-stereotype">«wrapper»</div>
+        <div class="class-name">Resume</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Attributes</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">candidate</span><span class="member-type">: Candidate</span></div>
+      </div>
+      <div class="section">
+        <div class="section-label">Methods</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__init__</span><span class="member-param">(candidate)</span></div>
+        <div class="member" style="padding-left:28px;font-size:10px;color:var(--red);">→ raises ResumeValidationError</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__str__</span><span class="member-ret">→ str</span></div>
+      </div>
+      <div class="section">
+        <div class="section-label">Validation</div>
+        <div class="member" style="font-size:10px;color:var(--muted);">name.strip() 공백 검사</div>
+        <div class="member" style="font-size:10px;color:var(--muted);">"미배정" 6개 항목 검사</div>
+      </div>
+    </div>
+
+    <!-- 4. EvaluationResult -->
+    <div class="uml-box theme-result pos-result" id="box-result">
+      <div class="class-header">
+        <div class="class-stereotype">«value object»</div>
+        <div class="class-name">EvaluationResult</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Attributes</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">candidate</span><span class="member-type">: Candidate</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">fairness_score</span><span class="member-type">: int</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">bias_score</span><span class="member-type">: int</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">total_score</span><span class="member-type">: int</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">details</span><span class="member-type">: list</span></div>
+      </div>
+      <div class="section">
+        <div class="section-label">Methods (Dunder)</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__init__</span><span class="member-param">(...)</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__lt__</span><span class="member-param">(other)</span><span class="member-ret">→ bool</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__gt__</span><span class="member-param">(other)</span><span class="member-ret">→ bool</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__str__</span><span class="member-ret">→ str</span></div>
+      </div>
+    </div>
+
+    <!-- 5. BiasRule -->
+    <div class="uml-box theme-biasrule pos-biasrule" id="box-biasrule">
+      <div class="class-header">
+        <div class="class-stereotype">«rule»</div>
+        <div class="class-name">BiasRule</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Attributes</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">label</span><span class="member-type">: str</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">condition_fn</span><span class="member-type">: Callable</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">penalty</span><span class="member-type">: int</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">reason</span><span class="member-type">: str</span></div>
+      </div>
+      <div class="section">
+        <div class="section-label">Methods</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__init__</span><span class="member-param">(...)</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">apply</span><span class="member-param">(candidate)</span><span class="member-ret">→ tuple</span></div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-dunder">__str__</span><span class="member-ret">→ str</span></div>
+      </div>
+    </div>
+
+    <!-- 6. FairEvaluator -->
+    <div class="uml-box theme-fair pos-fair" id="box-fair">
+      <div class="class-header">
+        <div class="class-stereotype">«evaluator»</div>
+        <div class="class-name">FairEvaluator</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Scoring Logic</div>
+        <div class="member" style="font-size:10px;color:var(--muted);">base: 80점</div>
+        <div class="member" style="font-size:10px;color:var(--green);">경력 많음: +12</div>
+        <div class="member" style="font-size:10px;color:var(--green);">경력 적음: +4</div>
+        <div class="member" style="font-size:10px;color:var(--green);">관련 전공: +8</div>
+        <div class="member" style="font-size:10px;color:var(--green);">비전공: +1</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Methods</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">evaluate</span><span class="member-param">(resume)</span><span class="member-ret">→ EvaluationResult</span></div>
+      </div>
+    </div>
+
+    <!-- 7. BiasedEvaluator -->
+    <div class="uml-box theme-biased pos-biased" id="box-biased">
+      <div class="class-header">
+        <div class="class-stereotype">«evaluator»</div>
+        <div class="class-name">BiasedEvaluator</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Class Variable</div>
+        <div class="member">
+          <span class="member-static">CLASS</span>
+          <span class="member-name">BIAS_RULES</span><span class="member-type">: List[BiasRule]</span>
+        </div>
+        <div class="member" style="font-size:10px;color:var(--red);padding-left:28px;">성별 편향 −10</div>
+        <div class="member" style="font-size:10px;color:var(--red);padding-left:28px;">억양 편향 −12</div>
+        <div class="member" style="font-size:10px;color:var(--red);padding-left:28px;">지연 편향 −10</div>
+        <div class="member" style="font-size:10px;color:var(--red);padding-left:28px;">학연 편향 −8</div>
+        <div class="member" style="font-size:10px;color:var(--red);padding-left:28px;">성씨 편향 −6</div>
+      </div>
+      <div class="section">
+        <div class="section-label">Methods</div>
+        <div class="member"><span class="member-vis vis-pub">+</span><span class="member-name">evaluate</span><span class="member-param">(resume)</span><span class="member-ret">→ EvaluationResult</span></div>
+        <div class="member" style="font-size:10px;color:var(--muted);padding-left:28px;">calls super().evaluate()</div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="note-box">
+      <strong>// OOP 핵심 포인트 ①②</strong><br>
+      캡슐화: Resume.__init__에서 ResumeValidationError 발생 → 오염 데이터 차단<br>
+      단일책임: Candidate(데이터) / Resume(검증) / EvaluationResult(결과) 명확히 분리<br>
+      BiasRule은 조건·감점·사유를 하나로 캡슐화 → apply()로 자율 판단
+    </div>
+
+    <div class="note-box2">
+      <strong>// OOP 핵심 포인트 ③ 상속 & 다형성</strong><br>
+      BiasedEvaluator extends FairEvaluator → super().evaluate() 재사용<br>
+      오버라이딩: evaluate() 메소드가 자식에서 재정의됨<br>
+      EvaluationResult.__lt__ / __gt__ → sorted() 정렬에서 다형적 비교
+    </div>
+
+  </div><!-- /diagram-grid -->
+</div><!-- /canvas -->
+
+<!-- Legend -->
+<div class="legend">
+  <span class="legend-title">LEGEND</span>
+  <div class="legend-item">
+    <div class="legend-line leg-inherit"></div>
+    상속 (Inheritance)
+  </div>
+  <div class="legend-item">
+    <div class="legend-line" style="border-top:2px dashed #58a6ff;height:0;width:40px;"></div>
+    합성 (Composition)
+  </div>
+  <div class="legend-item">
+    <div class="legend-line" style="border-top:2px dashed #bc8cff;height:0;width:40px;"></div>
+    사용 (Uses / Dependency)
+  </div>
+  <div class="legend-item">
+    <div class="legend-line" style="border-top:2px dashed #f85149;height:0;width:40px;"></div>
+    예외 발생 (raises)
+  </div>
+  <div class="legend-item" style="margin-left:auto;">
+    <span style="color:var(--green);font-family:'JetBrains Mono',monospace;font-size:11px;">+ public</span>
+  </div>
+  <div class="legend-item">
+    <span style="color:var(--red);font-family:'JetBrains Mono',monospace;font-size:11px;">- private</span>
+  </div>
+  <div class="legend-item">
+    <span style="color:var(--orange);font-family:'JetBrains Mono',monospace;font-size:11px;"># protected</span>
+  </div>
+</div>
+
+<script>
+// Draw relationship arrows dynamically using element positions
+function getCenter(el) {
+  const r = el.getBoundingClientRect();
+  const cr = document.querySelector('.canvas').getBoundingClientRect();
+  return {
+    x: r.left - cr.left + r.width / 2,
+    y: r.top - cr.top + r.height / 2,
+    left: r.left - cr.left,
+    right: r.left - cr.left + r.width,
+    top: r.top - cr.top,
+    bottom: r.top - cr.top + r.height,
+    w: r.width,
+    h: r.height,
+  };
+}
+
+function makeLine(svg, x1, y1, x2, y2, stroke, dash, markerId, label) {
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+  line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+  line.setAttribute('stroke', stroke);
+  line.setAttribute('stroke-width', '1.8');
+  if (dash) line.setAttribute('stroke-dasharray', dash);
+  if (markerId) line.setAttribute('marker-end', `url(#${markerId})`);
+  svg.appendChild(line);
+
+  if (label) {
+    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    txt.setAttribute('x', (x1 + x2) / 2 + 4);
+    txt.setAttribute('y', (y1 + y2) / 2 - 5);
+    txt.setAttribute('class', 'rel-label');
+    txt.setAttribute('fill', stroke);
+    txt.textContent = label;
+    svg.appendChild(txt);
+  }
+}
+
+function drawArrows() {
+  const svg = document.getElementById('arrowSvg');
+  // Clear old arrows (keep defs)
+  Array.from(svg.children).forEach(c => { if (c.tagName !== 'defs') svg.removeChild(c); });
+
+  const boxes = {
+    exception: document.getElementById('box-exception'),
+    candidate: document.getElementById('box-candidate'),
+    resume:    document.getElementById('box-resume'),
+    result:    document.getElementById('box-result'),
+    biasrule:  document.getElementById('box-biasrule'),
+    fair:      document.getElementById('box-fair'),
+    biased:    document.getElementById('box-biased'),
+  };
+
+  const p = {};
+  for (const [k, el] of Object.entries(boxes)) p[k] = getCenter(el);
+
+  // 1. BiasedEvaluator --inherits--> FairEvaluator (solid + filled arrow)
+  makeLine(svg,
+    p.biased.left, p.biased.top + p.biased.h/2,
+    p.fair.right, p.fair.top + p.fair.h/2,
+    '#e8b400', null, 'inherit-arrow', '상속');
+
+  // 2. Resume --uses--> Candidate (dashed)
+  makeLine(svg,
+    p.resume.left, p.resume.top + 40,
+    p.candidate.right, p.candidate.top + 40,
+    '#58a6ff', '6 3', 'dep-arrow', '합성');
+
+  // 3. Resume --raises--> ResumeValidationError
+  makeLine(svg,
+    p.resume.left - 4, p.resume.top + p.resume.h/2,
+    p.exception.right, p.exception.top + p.exception.h/2,
+    '#f85149', '4 4', 'raise-arrow', 'raises');
+
+  // 4. FairEvaluator --uses--> Resume
+  makeLine(svg,
+    p.fair.left, p.fair.top + 30,
+    p.resume.right, p.resume.bottom - 30,
+    '#bc8cff', '5 4', 'use-arrow', 'evaluate(resume)');
+
+  // 5. FairEvaluator --returns--> EvaluationResult
+  makeLine(svg,
+    p.fair.right, p.fair.top + 40,
+    p.result.left, p.result.bottom - 40,
+    '#3fb950', '5 4', 'use-arrow', '→ returns');
+
+  // 6. BiasedEvaluator --uses--> BiasRule
+  makeLine(svg,
+    p.biased.left, p.biased.top + p.biased.h * 0.7,
+    p.biasrule.right, p.biasrule.top + p.biasrule.h * 0.7,
+    '#ffa657', '5 4', 'use-arrow', 'BIAS_RULES[]');
+
+  // 7. BiasRule --uses--> Candidate
+  makeLine(svg,
+    p.biasrule.right, p.biasrule.top + 30,
+    p.candidate.left, p.candidate.bottom - 10,
+    '#bc8cff', '4 4', 'use-arrow', 'apply(candidate)');
+
+  // 8. EvaluationResult --uses--> Candidate
+  makeLine(svg,
+    p.result.left, p.result.top + 25,
+    p.candidate.right, p.candidate.top + 25,
+    '#58a6ff', '4 4', 'dep-arrow', '');
+}
+
+window.addEventListener('load', () => { setTimeout(drawArrows, 100); });
+window.addEventListener('resize', drawArrows);
+</script>
+</body>
+</html>
